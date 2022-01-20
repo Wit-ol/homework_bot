@@ -109,13 +109,14 @@ def check_tokens():
 
 def main():
     """Основная логика работы бота."""
+    check_tokens()
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
+    homework_status = []
     while True:
         try:
             new_homework = get_api_answer(current_timestamp)
             homework = check_response(new_homework)[0]
-            homework_status = homework['status']
             if homework['status'] != homework_status:
                 message = parse_status(homework)
                 send_message(bot, message)
@@ -123,7 +124,8 @@ def main():
             else:
                 message = 'Status is not change'
                 send_message(bot, message)
-                logger.debug('Status is not change')
+                logger.debug(message)
+            homework_status = homework['status']
             current_timestamp = new_homework['current_date']
             time.sleep(RETRY_TIME)
         except Exception as error:
