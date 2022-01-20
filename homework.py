@@ -75,7 +75,9 @@ def check_response(response):
         if type(homeworks) == list:
             return homeworks
         raise exceptions.BOT_ERROR('Ошибка корректности данных list')
-    elif response == requests.get(ENDPOINT, headers=HEADERS, params=['from_date']):
+    elif response == requests.get(ENDPOINT,
+                                  headers=HEADERS,
+                                  params=['from_date']):
         if response.status_code == HTTPStatus.OK:
             return
         raise exceptions.BOT_ERROR('Ошибка status_code != 200')
@@ -83,7 +85,7 @@ def check_response(response):
 
 
 def parse_status(homework):
-    """Извлекает из информации о конкретной домашней работе статус этой работы."""
+    """Извлекает статус конкретной домашней работы."""
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
     statuses = HOMEWORK_STATUSES
@@ -94,7 +96,7 @@ def parse_status(homework):
 
 
 def check_tokens():
-    """Проверяет доступность переменных, которые необходимы для работы программы."""
+    """Проверяет доступность переменных."""
     if PRACTICUM_TOKEN is None:
         return False
     elif TELEGRAM_TOKEN is None:
