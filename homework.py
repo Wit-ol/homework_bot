@@ -15,9 +15,8 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
     datefmt='%m/%d/%Y %I:%M:%S %p',
-    filename='.homework.log'
+    filename=os.path.join(os.path.dirname(__file__), '.homework.log')
 )
-
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -46,35 +45,47 @@ HOMEWORK_STATUSES = {
 
 def send_message(bot, message):
     """Отправляет сообщение в Telegram чат."""
-    logging.info('Message must be sent!')
-    bot.send_message(
-        chat_id=TELEGRAM_CHAT_ID,
-        text=message
-    )
+    try:
+        logging.info('Message must be sent!')
+        bot.send_message(
+            chat_id=TELEGRAM_CHAT_ID,
+            text=message
+        )
+    except Exception as error:
+        message = f'Сбой в отправке сообщения: {error}'
+        logger.error(message)
 
 
 def get_api_answer(current_timestamp):
     """Делает запрос к единственному эндпоинту API-сервиса."""
     timestamp = current_timestamp or int(time.time())
     params = {'from_date': timestamp}
-    homework_statuses = requests.get(
-        url=ENDPOINT,
-        headers=HEADERS,
-        params=params
-    )
-    if homework_statuses.status_code == HTTPStatus.OK:
-        return homework_statuses.json()
-    raise exceptions.BOT_ERROR('Ошибка status_code != 200')
+    try:
+        homework_statuses = requests.get(
+            url=ENDPOINT,
+            headers=HEADERS,
+            params=params
+        )
+        if homework_statuses.status_code == HTTPStatus.OK:
+            return homework_statuses.json()
+        raise exceptions.BOT_ERROR('Ошибка status_code != 200')
+    except Exception as error:
+        message = f'Недоступен путь запроса: {error}'
+        logger.error(message)
+        raise exceptions.BOT_ERROR(message)
 
 
 def check_response(response):
     """Проверяет ответ API на корректность."""
     if type(response) == dict:
-        response['current_date']
-        homeworks = response['homeworks']
+        try:
+            response['current_date']
+            homeworks = response['homeworks']
+        except Exception as error:
+            logger.error(f'Сбой в в доступности ключей: {error}')
         if type(homeworks) == list:
             return homeworks
-        raise exceptions.BOT_ERROR('Ошибка корректности данных list')
+        raise TypeError
     elif response == requests.get(ENDPOINT,
                                   headers=HEADERS,
                                   params=['from_date']):
@@ -98,10 +109,13 @@ def parse_status(homework):
 def check_tokens():
     """Проверяет доступность переменных."""
     if PRACTICUM_TOKEN is None:
+        logger.critical('Не доступна переменная PRACTICUM_TOKEN')
         return False
     elif TELEGRAM_TOKEN is None:
+        logger.critical('Не доступна переменная TELEGRAM_TOKEN')
         return False
     elif TELEGRAM_CHAT_ID is None:
+        logger.critical('Не доступна переменная TELEGRAM_TOKEN')
         return False
     else:
         return True
